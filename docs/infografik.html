@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Zo + Supabase Self-Host — İnfografik</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1080px; height:1350px; overflow:hidden; }
+  body {
+    font-family:'Inter','Noto Color Emoji',sans-serif;
+    background:#050a18;
+    color:#eef3fa;
+    position:relative;
+  }
+  .bg-grid {
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+    background-size:46px 46px;
+    mask-image:radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 100%);
+    -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 100%);
+  }
+  .glow1 {
+    position:absolute; width:900px; height:520px; left:90px; top:-220px;
+    background:radial-gradient(ellipse, rgba(62,207,142,.16) 0%, transparent 65%);
+  }
+  .glow2 {
+    position:absolute; width:700px; height:500px; right:-180px; bottom:-140px;
+    background:radial-gradient(ellipse, rgba(47,128,237,.10) 0%, transparent 65%);
+  }
+  .page {
+    position:relative; z-index:2;
+    height:100%;
+    padding:44px 52px 40px;
+    display:flex; flex-direction:column;
+  }
+  .badge-row { display:flex; justify-content:space-between; align-items:center; }
+  .badge {
+    display:inline-flex; align-items:center; gap:10px;
+    border:1px solid rgba(62,207,142,.4);
+    background:rgba(62,207,142,.09);
+    color:#3ecf8e;
+    font-size:19px; font-weight:700; letter-spacing:.14em;
+    padding:9px 20px; border-radius:999px;
+  }
+  .badge .dot { width:9px; height:9px; border-radius:50%; background:#3ecf8e; box-shadow:0 0 10px #3ecf8e; }
+  .brand { font-size:21px; font-weight:800; letter-spacing:.05em; color:#c8d4e6; }
+  .brand b { color:#3ecf8e; }
+
+  .hook { margin-top:34px; }
+  .hook .line1 {
+    font-size:37px; font-weight:600; color:#8fa0b8;
+  }
+  .hook .line1 s { color:#ff7a7a; text-decoration-color:#ff7a7a; text-decoration-thickness:3px; }
+  .hook .line2 {
+    margin-top:10px;
+    font-size:82px; font-weight:900; line-height:1.02; letter-spacing:-.02em;
+  }
+  .hook .line2 .g {
+    background:linear-gradient(92deg,#3ecf8e 10%, #7cf0bd 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+
+  .cards { margin-top:32px; display:flex; flex-direction:column; gap:14px; }
+  .card {
+    display:flex; align-items:center; gap:20px;
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:18px;
+    padding:17px 24px;
+  }
+  .card .ico {
+    flex:0 0 62px; height:62px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:36px;
+    background:rgba(62,207,142,.10);
+    border:1px solid rgba(62,207,142,.22);
+    border-radius:15px;
+  }
+  .card .t { font-size:28px; font-weight:800; letter-spacing:-.01em; }
+  .card .t .hl { color:#3ecf8e; }
+  .card .d { margin-top:3px; font-size:21px; font-weight:500; color:#93a3bb; }
+
+  .vs-wrap { margin-top:28px; display:flex; align-items:stretch; gap:0; position:relative; }
+  .vs-col {
+    flex:1; border-radius:18px; padding:22px 26px 20px;
+  }
+  .vs-left {
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.10);
+  }
+  .vs-right {
+    background:rgba(62,207,142,.08);
+    border:1px solid rgba(62,207,142,.45);
+    box-shadow:0 0 34px rgba(62,207,142,.14);
+  }
+  .vs-tag { font-size:17px; font-weight:800; letter-spacing:.14em; color:#8fa0b8; }
+  .vs-right .vs-tag { color:#3ecf8e; }
+  .vs-price { margin-top:8px; font-size:44px; font-weight:900; letter-spacing:-.02em; }
+  .vs-left .vs-price { color:#c8d4e6; }
+  .vs-left .vs-price s { color:#ff7a7a; }
+  .vs-price .per { font-size:22px; font-weight:600; color:#8fa0b8; }
+  .vs-right .vs-price .per { color:#7ba88f; }
+  .vs-list { margin-top:9px; font-size:20px; font-weight:500; line-height:1.5; color:#93a3bb; }
+  .vs-right .vs-list { color:#cfe8da; }
+  .vs-mid {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:58px; height:58px; border-radius:50%;
+    background:#0b1526; border:2px solid rgba(255,255,255,.18);
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px; font-weight:900; letter-spacing:.05em; color:#eef3fa;
+    z-index:3;
+  }
+  .vs-gap { width:0; }
+
+  .cta {
+    margin-top:auto;
+    display:flex; align-items:center; justify-content:space-between; gap:24px;
+    background:linear-gradient(93deg,#2fbf82 0%, #3ecf8e 55%, #54e0a4 100%);
+    border-radius:20px;
+    padding:24px 34px;
+    box-shadow:0 14px 44px rgba(62,207,142,.28);
+  }
+  .cta .big { font-size:34px; font-weight:900; color:#04150d; letter-spacing:-.01em; white-space:nowrap; }
+  .cta .url {
+    font-family:'JetBrains Mono',monospace;
+    font-size:18px; font-weight:700;
+    color:#eafff4;
+    background:rgba(3,20,12,.34);
+    border:1px solid rgba(255,255,255,.22);
+    padding:12px 20px; border-radius:12px;
+    white-space:nowrap;
+  }
+  .foot {
+    margin-top:20px; text-align:center;
+    font-size:20px; font-weight:600; color:#6d7d94; letter-spacing:.04em;
+  }
+  .foot b { color:#93a3bb; }
+</style>
+</head>
+<body>
+  <div class="glow1"></div>
+  <div class="glow2"></div>
+  <div class="bg-grid"></div>
+
+  <div class="page">
+    <div class="badge-row">
+      <div class="badge"><span class="dot"></span>ZO PAKETİ</div>
+      <div class="brand">Zoria<b>Soft</b></div>
+    </div>
+
+    <div class="hook">
+      <div class="line1">Supabase'e ayda <s>25$ ödeme</s>.</div>
+      <div class="line2">Kendi Supabase'ini<br><span class="g">host et.</span></div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="ico">🖥️</div>
+        <div><div class="t">Zo — <span class="hl">4 CPU / 32 GB RAM</span></div>
+        <div class="d">gVisor sandbox — Auth (GoTrue) burada Docker'sız çalışır</div></div>
+      </div>
+      <div class="card">
+        <div class="ico">🔐</div>
+        <div><div class="t">GoTrue Auth</div>
+        <div class="d">Supabase Auth'un ta kendisi — Zo'da çalışır, production'da kullanımda</div></div>
+      </div>
+      <div class="card">
+        <div class="ico">📦</div>
+        <div><div class="t">Full Stack — <span class="hl">Tek Komutla</span></div>
+        <div class="d">Studio + Realtime + Storage — ayrı, gerçek kernel'li VPS'te (Zo'da değil)</div></div>
+      </div>
+      <div class="card">
+        <div class="ico">🤖</div>
+        <div><div class="t"><span class="hl">10$ AI Kredisi</span></div>
+        <div class="d">Sohbet + görsel üretim — pakete dahil</div></div>
+      </div>
+      <div class="card">
+        <div class="ico">💻</div>
+        <div><div class="t">Uzaktan Terminal</div>
+        <div class="d">Tarayıcıdan her yerden — tunnel + custom domain</div></div>
+      </div>
+    </div>
+
+    <div class="vs-wrap">
+      <div class="vs-col vs-left">
+        <div class="vs-tag">SUPABASE PRO</div>
+        <div class="vs-price"><s>25$</s><span class="per">/ay</span></div>
+        <div class="vs-list">Kotalı plan • limit onlarda<br>Verin onların sunucusunda</div>
+      </div>
+      <div class="vs-mid">VS</div>
+      <div class="vs-col vs-right">
+        <div class="vs-tag">ZO + SELF-HOST AUTH</div>
+        <div class="vs-price">18$<span class="per">/ay</span></div>
+        <div class="vs-list">Auth + kullanıcı verin sende<br>Full stack için ayrı VPS gerekir</div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <div class="big">⚡ Kurulum rehberi</div>
+      <div class="url">github.com/ZoriaSoft/supabase-selfhost</div>
+    </div>
+
+    <div class="foot">Açık kaynak <b>•</b> Apache-2.0 <b>•</b> Türkçe + İngilizce rehber</div>
+  </div>
+</body>
+</html>

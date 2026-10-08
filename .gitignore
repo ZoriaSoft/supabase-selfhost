@@ -1,0 +1,23 @@
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Runtime data
+volumes/db/data/
+volumes/storage/*
+!volumes/storage/.gitkeep
+volumes/snippets/*
+!volumes/snippets/.gitkeep
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.old
+*.bak
+
+# Path A local artifacts (binary + secrets env)
+/bin/
+gotrue.env
