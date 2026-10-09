@@ -119,6 +119,16 @@ fi
 
 echo "Updating .env..."
 
+# supabase-selfhost: never overwrite a rotated POSTGRES_PASSWORD — the DB
+# volume was initialized with it; a new value would break every service.
+pgpw_keep=$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2- | tail -n1)
+pgpw_example=$(sed -n 's|^POSTGRES_PASSWORD=||p' .env.example | tail -n1)
+if [ -n "$pgpw_keep" ] && [ -n "$pgpw_example" ] && [ "$pgpw_keep" != "$pgpw_example" ]; then
+    echo "POSTGRES_PASSWORD kept (DB volume already initialized with it)."
+    echo "To rotate: docker exec supabase-db psql -U postgres -c \"ALTER USER postgres PASSWORD 'new'\", then update .env."
+    postgres_password="$pgpw_keep"
+fi
+
 sed \
     -i.old \
     -e "s|^JWT_SECRET=.*$|JWT_SECRET=${jwt_secret}|" \

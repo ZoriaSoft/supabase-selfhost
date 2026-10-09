@@ -22,6 +22,18 @@ info()  { printf '\033[0;32m[+]\033[0m %s\n' "$*"; }
 warn()  { printf '\033[0;33m[!]\033[0m %s\n' "$*"; }
 fail()  { printf '\033[0;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
+# Read the last KEY=... assignment from a dotenv file without evaluating it
+# (sourcing .env would execute $(...) and break on values with spaces).
+env_get() {
+    local v
+    v="$(sed -n "s/^$1=//p" "$2" | tail -n1)"
+    case "$v" in
+        \"*\") v="${v#\"}"; v="${v%\"}" ;;
+        \'*\') v="${v#\'}"; v="${v%\'}" ;;
+    esac
+    printf '%s' "$v"
+}
+
 # ---------------------------------------------------------------- 1. checks
 
 command -v docker >/dev/null 2>&1 || fail "docker not found. Install Docker Engine: https://docs.docker.com/engine/install/"
@@ -47,6 +59,28 @@ fi
 GENERATE=${GENERATE:-0}
 chmod 600 .env   # holds JWT secret + DB password; keep owner-only
 [ "$RESET_ENV" -eq 1 ] && GENERATE=1
+
+# Refuse to boot with the public example secrets: .env.example ships the
+# well-known demo JWT secret/keys — anyone holding them can mint admin
+# tokens, and the gateway listens on all interfaces by default.
+if [ "$GENERATE" -eq 0 ]; then
+    for var in JWT_SECRET ANON_KEY SERVICE_ROLE_KEY POSTGRES_PASSWORD \
+               DASHBOARD_PASSWORD SECRET_KEY_BASE REALTIME_DB_ENC_KEY \
+               VAULT_ENC_KEY PG_META_CRYPTO_KEY \
+               LOGFLARE_PUBLIC_ACCESS_TOKEN LOGFLARE_PRIVATE_ACCESS_TOKEN \
+               S3_PROTOCOL_ACCESS_KEY_ID S3_PROTOCOL_ACCESS_KEY_SECRET \
+               MINIO_ROOT_PASSWORD; do
+        example="$(env_get "$var" .env.example)"
+        [ -n "$example" ] || continue
+        [ "$(env_get "$var" .env)" = "$example" ] || continue
+        if [ "$var" = "POSTGRES_PASSWORD" ]; then
+            fail ".env still has the public example value for POSTGRES_PASSWORD. If the DB volume was already initialized with it, rotate in place first:
+       docker exec supabase-db psql -U postgres -c \"ALTER USER postgres PASSWORD 'new-password'\"
+     then update .env to match — or regenerate everything with ./setup.sh --reset-env"
+        fi
+        fail ".env still has the public example value for $var — run ./setup.sh --reset-env"
+    done
+fi
 
 # ---------------------------------------------------- 3. secret generation
 
@@ -121,14 +155,14 @@ docker compose up -d
 
 # ------------------------------------------------------------- 5. wait/print
 
-. ./.env   # shellcheck disable=SC1091 — .env is KEY=VALUE lines
-
-GW_PORT="${API_GW_HTTP_PORT:-8000}"
-ST_PORT="${STUDIO_PORT:-3000}"
+GW_PORT="$(env_get API_GW_HTTP_PORT .env)";  GW_PORT="${GW_PORT:-8000}"
+ST_PORT="$(env_get STUDIO_PORT .env)";       ST_PORT="${ST_PORT:-3000}"
+PG_PORT="$(env_get POSTGRES_PORT .env)";     PG_PORT="${PG_PORT:-5432}"
+POOL_PORT="$(env_get POOLER_PROXY_PORT_TRANSACTION .env)"; POOL_PORT="${POOL_PORT:-6543}"
 
 info "Waiting for the API gateway on :$GW_PORT ..."
 GATEWAY_UP=0
-for i in $(seq 1 60); do
+for _ in $(seq 1 60); do
     if curl -fsS -o /dev/null -w '%{http_code}' "http://localhost:${GW_PORT}/" 2>/dev/null | grep -qE '^(200|301|302|401|403|404)$'; then
         GATEWAY_UP=1
         break
@@ -157,8 +191,8 @@ cat <<EOF
     Realtime   ws://localhost:${GW_PORT}/realtime/v1/
     Storage    http://localhost:${GW_PORT}/storage/v1/
     Functions  http://localhost:${GW_PORT}/functions/v1/
-  Postgres         postgresql://postgres:<POSTGRES_PASSWORD>@localhost:${POSTGRES_PORT:-5432}/postgres
-  Pooler (txn)     localhost:${POOLER_PROXY_PORT_TRANSACTION:-6543}
+  Postgres         postgresql://postgres:<POSTGRES_PASSWORD>@localhost:${PG_PORT}/postgres
+  Pooler (txn)     localhost:${POOL_PORT}
 
   Credentials and keys are in .env (gitignored — never commit it).
   Read SECURITY.md before exposing any of this to a network.

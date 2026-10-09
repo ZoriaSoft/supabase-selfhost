@@ -21,3 +21,6 @@ Thumbs.db
 # Path A local artifacts (binary + secrets env)
 /bin/
 gotrue.env
+
+# Local tooling
+.venv/

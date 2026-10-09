@@ -11,6 +11,8 @@ uçtan uca doğrulama (`verify.sh`) ve Docker'sız GoTrue kurulumu
 (`scripts/`) bu repoda paketlenmiştir; Studio'ya doğrudan `:3000`
 port eşlemesi (yalnız localhost) de eklenmiştir.
 
+<p align="center"><img src="docs/assets/how-it-works.svg" alt="supabase-selfhost: Path A single GoTrue binary + Postgres, or Path B full docker compose stack behind the Envoy gateway" width="100%"></p>
+
 ## İki yol — hangisi sana?
 
 ### Yol A — Hafif: sadece Auth (GoTrue tek binary)
@@ -29,9 +31,8 @@ reposunun GitHub release'lerinde hazır binary olarak yayınlanır.
 - **Nerede çalışır:** her yerde — özellikle **Zo** (zo computer):
   Zo bir gVisor sandbox'ıdır; Docker container çalıştıramaz. Yol A
   binary GoTrue, Zo-uyumlu yoldur (Docker gerekmez).
-- **Kanıt:** production'da aktif — Zoria uygulamalarının auth'u bu
-  kurulumla çalışıyor. Yol A e2e testi Zo üzerinde de geçti
-  ([DOGRULAMA.md](DOGRULAMA.md)).
+- **Kanıt:** production'da kullanılıyor. Yol A e2e testi Zo üzerinde de
+  geçti ([DOGRULAMA.md](DOGRULAMA.md)).
 
 
 **Kurulum (Yol A):** Docker gerekmez — prebuilt binary indirilir:
@@ -97,6 +98,8 @@ Dürüst notlar:
 - Kendi host etmek = operasyon sorumluluğu. Güncelleme, yedek ve
   güvenlik (TLS, firewall) sana aittir — bkz. [SECURITY.md](SECURITY.md).
 
+<p align="center"><img src="docs/infografik.png" alt="supabase-selfhost maliyet infografiği" width="480"></p>
+
 ## Zo Computer (Yol A için)
 
 > **$18/ay paket (Zo Computer):** 4 CPU / 32 GB RAM + $10 AI kredisi
@@ -121,6 +124,9 @@ cd supabase-selfhost
 `setup.sh` Docker'ı kontrol eder, `.env`'i oluşturur, **tüm secret'ları
 üretir** (JWT secret + ANON/SERVICE anahtarları resmî yöntemle,
 HS256-imzalı JWT'ler), stack'i ayağa kaldırır ve URL'leri basar.
+`.env` zaten varsa ama `.env.example`'daki **örnek/demo değerleri**
+taşıyorsa kurulum reddedilir — public demolarla stack ayağa kalkmaz
+(`./setup.sh --reset-env` ile yeniden üret).
 
 Bittiğinde:
 
@@ -206,8 +212,7 @@ the `supabase/auth` GitHub releases.
 - **Runs anywhere** — especially on **Zo** (zo computer): Zo is a
   gVisor sandbox and cannot run Docker containers. Path A (binary
   GoTrue) is the Zo-compatible path.
-- **Proof:** running in production — Zoria apps authenticate via this
-  setup. Path A e2e also passed on Zo
+- **Proof:** used in production. Path A e2e also passed on Zo
   ([DOGRULAMA.md](DOGRULAMA.md)).
 
 
@@ -296,7 +301,10 @@ cd supabase-selfhost
 
 `setup.sh` checks Docker, creates `.env`, **generates all secrets** (JWT
 secret + anon/service keys via the official HS256 method), starts the
-stack and prints your URLs.
+stack and prints your URLs. If `.env` already exists but still contains
+the **example values** from `.env.example`, setup refuses to start —
+the public demo credentials never reach a running stack
+(`./setup.sh --reset-env` regenerates).
 
 - **Studio:** `http://<host>:8000` (gateway, basic auth:
   `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from `.env`). The direct

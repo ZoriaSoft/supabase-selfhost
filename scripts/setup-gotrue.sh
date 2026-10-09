@@ -8,7 +8,17 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST_DIR="${GOTRUE_DIR:-$REPO_ROOT/bin}"
 ENV_OUT="${GOTRUE_ENV:-$REPO_ROOT/gotrue.env}"
 TAG="${GOTRUE_VERSION:-v2.197.0}"  # pinned default (matches bin/gotrue); override via GOTRUE_VERSION
-SHA256_EXPECTED="${GOTRUE_SHA256:-}"  # when set, the downloaded asset must match
+SHA256_EXPECTED="${GOTRUE_SHA256:-}"  # when set, overrides the pinned hash below
+
+# Pinned sha256 of each release asset for the default tag.
+# The supabase/auth release publishes no checksums file, so these were
+# computed on first download (trust-on-first-use, 2026-10-09).
+declare -A PINNED_SHA256=(
+  [auth-v2.197.0-amd64.tar.xz]=b5c2991d1df760c9b099c1c2395a94bd1c2f83ed58901934921997179dc9f7ea
+  [auth-v2.197.0-arm64.tar.xz]=a9da2e668137cb280c830d900df4081b3fdd42a289469485634426a7587f9f76
+  [auth-v2.197.0-darwin-arm64.tar.gz]=3fb7998e7061e2c14f3f9555b1d94d447358c965395728e0d81eac82e0e5868b
+  [auth-v2.197.0-x86.tar.gz]=9daff5d1939c3142a1586e435e6e2a7a2f71534ec40ff1b196b59b83ad5678f3
+)
 
 arch_norm() {
   local m
@@ -103,15 +113,28 @@ EOF2
   mkdir -p "$DEST_DIR"
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
+  # Integrity is mandatory. The default tag verifies against the pinned
+  # hashes above; any other GOTRUE_VERSION requires GOTRUE_SHA256.
+  local expected=""
+  if [ -n "$SHA256_EXPECTED" ]; then
+    expected="$SHA256_EXPECTED"
+  elif [ "$tag" = "v2.197.0" ]; then
+    expected="${PINNED_SHA256[$name]:-}"
+    if [ -z "$expected" ]; then
+      echo "no pinned sha256 for asset $name — pass GOTRUE_SHA256 explicitly" >&2
+      exit 1
+    fi
+  else
+    echo "GOTRUE_VERSION=$tag has no pinned checksum — refusing to install an" >&2
+    echo "unverified auth binary. Get the asset's sha256 and re-run with:" >&2
+    echo "    GOTRUE_SHA256=<sha256> $0" >&2
+    exit 1
+  fi
   echo "==> downloading $name"
   curl -fL --progress-bar -o "$tmp/$name" "$url"
-  if [ -n "$SHA256_EXPECTED" ]; then
-    echo "$SHA256_EXPECTED  $tmp/$name" | sha256sum -c - \
-      || { echo "sha256 mismatch for $name — refusing to install" >&2; exit 1; }
-    echo "    sha256 verified"
-  else
-    echo "    (no GOTRUE_SHA256 given — skipping asset verification)"
-  fi
+  echo "$expected  $tmp/$name" | sha256sum -c - \
+    || { echo "sha256 mismatch for $name — refusing to install" >&2; exit 1; }
+  echo "    sha256 verified"
   echo "==> extracting"
   case "$name" in
     *.tar.xz) tar -xJf "$tmp/$name" -C "$tmp" ;;
