@@ -13,12 +13,16 @@ SHA256_EXPECTED="${GOTRUE_SHA256:-}"  # when set, overrides the pinned hash belo
 # Pinned sha256 of each release asset for the default tag.
 # The supabase/auth release publishes no checksums file, so these were
 # computed on first download (trust-on-first-use, 2026-10-09).
-declare -A PINNED_SHA256=(
-  [auth-v2.197.0-amd64.tar.xz]=b5c2991d1df760c9b099c1c2395a94bd1c2f83ed58901934921997179dc9f7ea
-  [auth-v2.197.0-arm64.tar.xz]=a9da2e668137cb280c830d900df4081b3fdd42a289469485634426a7587f9f76
-  [auth-v2.197.0-darwin-arm64.tar.gz]=3fb7998e7061e2c14f3f9555b1d94d447358c965395728e0d81eac82e0e5868b
-  [auth-v2.197.0-x86.tar.gz]=9daff5d1939c3142a1586e435e6e2a7a2f71534ec40ff1b196b59b83ad5678f3
-)
+# A case function, not a map: bash 3.2 (macOS system bash) has no declare -A.
+pinned_sha256() {
+  case "$1" in
+    auth-v2.197.0-amd64.tar.xz)        echo b5c2991d1df760c9b099c1c2395a94bd1c2f83ed58901934921997179dc9f7ea ;;
+    auth-v2.197.0-arm64.tar.xz)        echo a9da2e668137cb280c830d900df4081b3fdd42a289469485634426a7587f9f76 ;;
+    auth-v2.197.0-darwin-arm64.tar.gz) echo 3fb7998e7061e2c14f3f9555b1d94d447358c965395728e0d81eac82e0e5868b ;;
+    auth-v2.197.0-x86.tar.gz)          echo 9daff5d1939c3142a1586e435e6e2a7a2f71534ec40ff1b196b59b83ad5678f3 ;;
+    *) echo "" ;;
+  esac
+}
 
 arch_norm() {
   local m
@@ -119,7 +123,7 @@ EOF2
   if [ -n "$SHA256_EXPECTED" ]; then
     expected="$SHA256_EXPECTED"
   elif [ "$tag" = "v2.197.0" ]; then
-    expected="${PINNED_SHA256[$name]:-}"
+    expected="$(pinned_sha256 "$name")"
     if [ -z "$expected" ]; then
       echo "no pinned sha256 for asset $name — pass GOTRUE_SHA256 explicitly" >&2
       exit 1
