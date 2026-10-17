@@ -121,6 +121,8 @@ cd supabase-selfhost
 ./setup.sh
 ```
 
+Başlatmadan önce (uzak sunucuda şart): `.env`'i önceden oluşturup (`cp .env.example .env`) `API_EXTERNAL_URL`, `SUPABASE_PUBLIC_URL`, `SITE_URL` ve `ADDITIONAL_REDIRECT_URLS` değerlerini gerçek domain'inize göre ayarlayın (örn. `https://supabase.example.com`); aksi halde auth callback ve e-posta linkleri loopback'e gider. Gateway'i bir TLS reverse proxy (Caddy/Nginx/Traefik) arkasında yayınlayın; Postgres portlarını dışarı açmayın.
+
 `setup.sh` Docker'ı kontrol eder, `.env`'i oluşturur, **tüm secret'ları
 üretir** (JWT secret + ANON/SERVICE anahtarları resmî yöntemle,
 HS256-imzalı JWT'ler), stack'i ayağa kaldırır ve URL'leri basar.
@@ -299,6 +301,8 @@ git clone https://github.com/ZoriaSoft/supabase-selfhost.git
 cd supabase-selfhost
 ./setup.sh
 ```
+
+Before starting (required on a remote server): create `.env` first (`cp .env.example .env`) and set `API_EXTERNAL_URL`, `SUPABASE_PUBLIC_URL`, `SITE_URL` and `ADDITIONAL_REDIRECT_URLS` to your real domain (e.g. `https://supabase.example.com`); otherwise auth callbacks and email links will point at loopback. Put the gateway behind a TLS reverse proxy (Caddy/Nginx/Traefik) and never expose the Postgres ports.
 
 `setup.sh` checks Docker, creates `.env`, **generates all secrets** (JWT
 secret + anon/service keys via the official HS256 method), starts the
