@@ -163,10 +163,10 @@ POOL_PORT="$(env_get POOLER_PROXY_PORT_TRANSACTION .env)"; POOL_PORT="${POOL_POR
 info "Waiting for the API gateway on :$GW_PORT ..."
 GATEWAY_UP=0
 for _ in $(seq 1 60); do
-    if curl -fsS -o /dev/null -w '%{http_code}' "http://localhost:${GW_PORT}/" 2>/dev/null | grep -qE '^(200|301|302|401|403|404)$'; then
-        GATEWAY_UP=1
-        break
-    fi
+    GW_CODE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://localhost:${GW_PORT}/" 2>/dev/null || true)"
+    case "$GW_CODE" in
+        200|401|403|404) GATEWAY_UP=1; break ;;
+    esac
     sleep 5
 done
 if [ "$GATEWAY_UP" -eq 0 ]; then
