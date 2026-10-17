@@ -121,12 +121,15 @@ cd supabase-selfhost
 ./setup.sh
 ```
 
+Başlatmadan önce (uzak sunucuda şart): `.env`'i önceden oluşturup (`cp .env.example .env`) `API_EXTERNAL_URL`, `SUPABASE_PUBLIC_URL`, `SITE_URL` ve `ADDITIONAL_REDIRECT_URLS` değerlerini gerçek domain'inize göre ayarlayın (örn. `https://supabase.example.com`), ardından örnek secret'ların yenilenmesi için kurulumu `./setup.sh --reset-env` ile çalıştırın; aksi halde auth callback ve e-posta linkleri loopback'e gider. Gateway'i bir TLS reverse proxy (Caddy/Nginx/Traefik) arkasında yayınlayın; Postgres portlarını dışarı açmayın.
+
 `setup.sh` Docker'ı kontrol eder, `.env`'i oluşturur, **tüm secret'ları
 üretir** (JWT secret + ANON/SERVICE anahtarları resmî yöntemle,
 HS256-imzalı JWT'ler), stack'i ayağa kaldırır ve URL'leri basar.
 `.env` zaten varsa ama `.env.example`'daki **örnek/demo değerleri**
 taşıyorsa kurulum reddedilir — public demolarla stack ayağa kalkmaz
 (`./setup.sh --reset-env` ile yeniden üret).
+`--reset-env` ayrıca `.env`'deki `JWT_KEYS` ve `JWT_JWKS` değerlerini de temizler; asymmetric anahtar kullanıyorsanız reset sonrası `utils/add-new-auth-keys.sh` betiğini yeniden çalıştırın.
 
 Bittiğinde:
 
@@ -299,12 +302,15 @@ cd supabase-selfhost
 ./setup.sh
 ```
 
+Before starting (required on a remote server): create `.env` first (`cp .env.example .env`), set `API_EXTERNAL_URL`, `SUPABASE_PUBLIC_URL`, `SITE_URL` and `ADDITIONAL_REDIRECT_URLS` to your real domain (e.g. `https://supabase.example.com`), then run `./setup.sh --reset-env` so the example secrets are replaced with fresh ones; otherwise auth callbacks and email links will point at loopback. Put the gateway behind a TLS reverse proxy (Caddy/Nginx/Traefik) and never expose the Postgres ports.
+
 `setup.sh` checks Docker, creates `.env`, **generates all secrets** (JWT
 secret + anon/service keys via the official HS256 method), starts the
 stack and prints your URLs. If `.env` already exists but still contains
 the **example values** from `.env.example`, setup refuses to start —
 the public demo credentials never reach a running stack
 (`./setup.sh --reset-env` regenerates).
+`--reset-env` also clears `JWT_KEYS` and `JWT_JWKS` in `.env`; if you use asymmetric keys, re-run `utils/add-new-auth-keys.sh` after a reset to repopulate them.
 
 - **Studio:** `http://<host>:8000` (gateway, basic auth:
   `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from `.env`). The direct
