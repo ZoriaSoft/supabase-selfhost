@@ -116,6 +116,14 @@ if [ "$GENERATE" -eq 1 ]; then
     set_env JWT_SECRET                     "$JWT_SECRET"
     set_env ANON_KEY                       "$ANON_KEY"
     set_env SERVICE_ROLE_KEY               "$SERVICE_ROLE_KEY"
+    if [ "$RESET_ENV" -eq 1 ]; then
+        # JWT_KEYS/JWT_JWKS embed the old JWT_SECRET (as an oct JWK) and
+        # the old EC keypair: leaving them would keep old signatures valid
+        # and make verifiers reject the fresh legacy keys. Clear them on
+        # reset; re-run utils/add-new-auth-keys.sh to repopulate them.
+        if grep -q '^JWT_KEYS=' .env; then set_env JWT_KEYS ""; else printf 'JWT_KEYS=\n' >> .env; fi
+        if grep -q '^JWT_JWKS=' .env; then set_env JWT_JWKS ""; else printf 'JWT_JWKS=\n' >> .env; fi
+    fi
     if [ "$RESET_ENV" -eq 1 ] && ! grep -q '^POSTGRES_PASSWORD=your-super-secret' .env; then
         # the persistent DB volume at first init, so rotating it here would
         # leave auth/rest/storage/supavisor unable to connect. To rotate:

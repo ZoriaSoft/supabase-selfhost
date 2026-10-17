@@ -127,6 +127,7 @@ HS256-imzalı JWT'ler), stack'i ayağa kaldırır ve URL'leri basar.
 `.env` zaten varsa ama `.env.example`'daki **örnek/demo değerleri**
 taşıyorsa kurulum reddedilir — public demolarla stack ayağa kalkmaz
 (`./setup.sh --reset-env` ile yeniden üret).
+`--reset-env` ayrıca `.env`'deki `JWT_KEYS` ve `JWT_JWKS` değerlerini de temizler; asymmetric anahtar kullanıyorsanız reset sonrası `utils/add-new-auth-keys.sh` betiğini yeniden çalıştırın.
 
 Bittiğinde:
 
@@ -305,6 +306,7 @@ stack and prints your URLs. If `.env` already exists but still contains
 the **example values** from `.env.example`, setup refuses to start —
 the public demo credentials never reach a running stack
 (`./setup.sh --reset-env` regenerates).
+`--reset-env` also clears `JWT_KEYS` and `JWT_JWKS` in `.env`; if you use asymmetric keys, re-run `utils/add-new-auth-keys.sh` after a reset to repopulate them.
 
 - **Studio:** `http://<host>:8000` (gateway, basic auth:
   `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from `.env`). The direct
